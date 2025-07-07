@@ -10,7 +10,7 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 $items = $conn->query("SELECT * FROM menu_items")->fetchAll(PDO::FETCH_ASSOC);
 ?>
-
+<?php include '../includes/user_header.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
