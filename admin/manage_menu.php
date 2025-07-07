@@ -1,7 +1,6 @@
 <?php
 session_start();
 require_once '../db.php';
-include '../includes/admin_header.php';
 
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header("Location: login.php");
