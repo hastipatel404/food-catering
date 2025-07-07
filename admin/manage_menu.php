@@ -2,106 +2,83 @@
 session_start();
 require_once '../db.php';
 
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+if (!isset($_SESSION['admin_logged_in'])) {
     header("Location: login.php");
     exit;
 }
 
-// Handle add menu item
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'], $_POST['price'])) {
-    $name = trim($_POST['name']);
-    $price = (float) $_POST['price'];
+// Handle new item addition
+if (isset($_POST['add'])) {
+    $name = $_POST['name'];
+    $price = $_POST['price'];
+    $image = $_FILES['image'];
 
-    if (!empty($name) && $price > 0) {
-        $stmt = $conn->prepare("INSERT INTO menu_items (name, price) VALUES (?, ?)");
-        $stmt->execute([$name, $price]);
-        $success = "Menu item added successfully.";
+    $image_name = basename($image['name']);
+    $target_dir = "../uploads/";
+    $target_path = $target_dir . $image_name;
+
+    if (move_uploaded_file($image['tmp_name'], $target_path)) {
+        $stmt = $conn->prepare("INSERT INTO menu_items (name, price, image) VALUES (?, ?, ?)");
+        $stmt->execute([$name, $price, $image_name]);
+        $message = "Item added successfully!";
     } else {
-        $error = "Please provide valid name and price.";
+        $error = "Image upload failed.";
     }
 }
 
-// Handle delete menu item
-if (isset($_GET['delete'])) {
-    $id = (int) $_GET['delete'];
-    $stmt = $conn->prepare("DELETE FROM menu_items WHERE id = ?");
-    $stmt->execute([$id]);
-    $success = "Menu item deleted.";
-}
-
-// Fetch menu items
-$stmt = $conn->prepare("SELECT * FROM menu_items ORDER BY name");
-$stmt->execute();
-$menu_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// Fetch existing items
+$items = $conn->query("SELECT * FROM menu_items ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<?php include '../includes/admin_header.php'; ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Menu</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
 
-<div class="container mt-4">
-    <h2 class="mb-4 text-primary">Manage Menu</h2>
+<div class="container mt-5">
+    <h3>Manage Menu</h3>
 
-    <?php if (!empty($success)): ?>
-        <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
-    <?php elseif (!empty($error)): ?>
-        <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+    <?php if (isset($message)): ?>
+        <div class="alert alert-success"><?= $message ?></div>
+    <?php elseif (isset($error)): ?>
+        <div class="alert alert-danger"><?= $error ?></div>
     <?php endif; ?>
 
-    <!-- Add New Item Form -->
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">Add New Menu Item</div>
-        <div class="card-body">
-            <form method="POST">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Item Name</label>
-                        <input type="text" name="name" class="form-control" required>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Price (₹)</label>
-                        <input type="number" step="0.01" name="price" class="form-control" required>
-                    </div>
-                    <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-success w-100">Add</button>
+    <form method="POST" enctype="multipart/form-data" class="card p-4 shadow-sm mb-4">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <input type="text" name="name" class="form-control" placeholder="Item Name" required>
+            </div>
+            <div class="col-md-3">
+                <input type="number" name="price" class="form-control" step="0.01" placeholder="Price ₹" required>
+            </div>
+            <div class="col-md-3">
+                <input type="file" name="image" class="form-control" accept="image/*" required>
+            </div>
+            <div class="col-md-2 d-grid">
+                <button type="submit" name="add" class="btn btn-success">Add Item</button>
+            </div>
+        </div>
+    </form>
+
+    <div class="row g-4">
+        <?php foreach ($items as $item): ?>
+            <div class="col-md-4">
+                <div class="card h-100 shadow">
+                    <img src="../uploads/<?= $item['image'] ?>" class="card-img-top" style="height: 200px; object-fit: cover;">
+                    <div class="card-body">
+                        <h5><?= htmlspecialchars($item['name']) ?></h5>
+                        <p>₹<?= number_format($item['price'], 2) ?></p>
                     </div>
                 </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Menu Items Table -->
-    <div class="card">
-        <div class="card-header bg-secondary text-white">Current Menu</div>
-        <div class="card-body p-0">
-            <table class="table table-striped table-hover m-0">
-                <thead class="table-dark">
-                    <tr>
-                        <th>#</th>
-                        <th>Item Name</th>
-                        <th>Price (₹)</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if ($menu_items): ?>
-                        <?php foreach ($menu_items as $index => $item): ?>
-                            <tr>
-                                <td><?= $index + 1 ?></td>
-                                <td><?= htmlspecialchars($item['name']) ?></td>
-                                <td><?= number_format($item['price'], 2) ?></td>
-                                <td>
-                                    <a href="?delete=<?= $item['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Delete this item?')">
-                                        <i class="bi bi-trash"></i> Delete
-                                    </a>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr><td colspan="4" class="text-center text-muted">No menu items available.</td></tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
+            </div>
+        <?php endforeach; ?>
     </div>
 </div>
 
-<?php include '../includes/admin_footer.php'; ?>
+</body>
+</html>
