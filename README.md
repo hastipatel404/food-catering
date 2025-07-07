@@ -198,12 +198,6 @@ Password: admin123
 
 ---
 
-## 📷 Screenshots
-
-> Add some screenshots here (optional for GitHub).
-
----
-
 ## 🧑‍💻 Author
 
 **Hasti Garala**  
