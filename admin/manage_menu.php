@@ -1,6 +1,24 @@
 <?php
 session_start();
 require_once '../db.php';
+// Handle item deletion
+if (isset($_GET['delete'])) {
+    $id = (int)$_GET['delete'];
+
+    // Optional: Delete the image file
+    $stmt = $conn->prepare("SELECT image FROM menu_items WHERE id = ?");
+    $stmt->execute([$id]);
+    $image = $stmt->fetchColumn();
+    if ($image && file_exists("../uploads/$image")) {
+        unlink("../uploads/$image");
+    }
+
+    // Delete item from DB
+    $stmt = $conn->prepare("DELETE FROM menu_items WHERE id = ?");
+    $stmt->execute([$id]);
+
+    $message = "Menu item deleted successfully!";
+}
 
 // Handle new item addition
 if (isset($_POST['add'])) {
@@ -21,7 +39,7 @@ if (isset($_POST['add'])) {
     }
 }
 
-// Fetch existing items
+// Fetch items
 $items = $conn->query("SELECT * FROM menu_items ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -43,6 +61,7 @@ $items = $conn->query("SELECT * FROM menu_items ORDER BY id DESC")->fetchAll(PDO
         <div class="alert alert-danger"><?= $error ?></div>
     <?php endif; ?>
 
+    <!-- Add Menu Form -->
     <form method="POST" enctype="multipart/form-data" class="card p-4 shadow-sm mb-4">
         <div class="row g-3">
             <div class="col-md-4">
@@ -60,14 +79,19 @@ $items = $conn->query("SELECT * FROM menu_items ORDER BY id DESC")->fetchAll(PDO
         </div>
     </form>
 
+    <!-- Existing Menu Items -->
     <div class="row g-4">
         <?php foreach ($items as $item): ?>
             <div class="col-md-4">
-                <div class="card h-100 shadow">
+                <div class="card h-100 shadow position-relative">
                     <img src="../uploads/<?= $item['image'] ?>" class="card-img-top" style="height: 200px; object-fit: cover;">
                     <div class="card-body">
                         <h5><?= htmlspecialchars($item['name']) ?></h5>
                         <p>₹<?= number_format($item['price'], 2) ?></p>
+                        <a href="?delete=<?= $item['id'] ?>" class="btn btn-danger btn-sm"
+                           onclick="return confirm('Are you sure you want to delete this item?')">
+                            Delete
+                        </a>
                     </div>
                 </div>
             </div>
