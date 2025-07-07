@@ -2,11 +2,6 @@
 session_start();
 require_once '../db.php';
 
-if (!isset($_SESSION['admin_logged_in'])) {
-    header("Location: login.php");
-    exit;
-}
-
 // Handle new item addition
 if (isset($_POST['add'])) {
     $name = $_POST['name'];
