@@ -26,7 +26,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 ?>
-
+<?php include '../includes/user_header.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>

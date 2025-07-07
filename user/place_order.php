@@ -46,7 +46,7 @@ if (!$cart_items) {
     $success = "Your order has been placed successfully!";
 }
 ?>
-
+<?php include '../includes/user_header.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>

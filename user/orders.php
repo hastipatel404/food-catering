@@ -14,7 +14,7 @@ $stmt = $conn->prepare("SELECT * FROM orders WHERE user_id = ? ORDER BY order_da
 $stmt->execute([$user_id]);
 $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
-
+<?php include '../includes/user_header.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>

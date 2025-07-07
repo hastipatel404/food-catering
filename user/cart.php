@@ -33,7 +33,7 @@ foreach ($cart_items as $item) {
     $total += $item['quantity'] * $item['price'];
 }
 ?>
-
+<?php include '../includes/user_header.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
